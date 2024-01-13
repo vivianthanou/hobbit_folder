@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "774898145492",
+    "project_id": "hobb-it-991c5",
+    "storage_bucket": "hobb-it-991c5.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:774898145492:android:28c144ad5057e0358c0341",
+        "android_client_info": {
+          "package_name": "com.example.hobb_bit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOWMBjknvAX9oi9ZlQ2W9-l0HOSfB_5cc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:774898145492:android:c49b637583532f298c0341",
+        "android_client_info": {
+          "package_name": "com.example.hobbit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOWMBjknvAX9oi9ZlQ2W9-l0HOSfB_5cc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
