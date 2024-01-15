@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:hobbit/pages/event.dart';
 //import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'edit_profile_page.dart';
+import 'explore.dart';
 //import 'api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import 'dart:typed_data';
-
+//import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 
@@ -22,7 +22,7 @@ class ProfileData extends ChangeNotifier {
     notifyListeners();
     
     //DATABASE
-    var url = Uri.parse('http://192.168.2.5:5000/updateUsername');
+    var url = Uri.parse('http://192.168.150.2:5000/updateUsername');
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json; charset=UTF-8'},
@@ -47,7 +47,7 @@ class ProfileData extends ChangeNotifier {
     notifyListeners();
     
     //DATABASE
-    var url = Uri.parse('http://192.168.2.5:5000/updateDescription');
+    var url = Uri.parse('http://192.168.150.2:5000/updateDescription');
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json; charset=UTF-8'},
@@ -72,7 +72,7 @@ class ProfileData extends ChangeNotifier {
     notifyListeners();
     //DATABASE
     String newImage2 = base64Encode(newImage);
-    var url = Uri.parse('http://192.168.2.5:5000/updateImage');
+    var url = Uri.parse('http://192.168.150.2:5000/updateImage');
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json; charset=UTF-8'},
@@ -97,7 +97,7 @@ class ProfileData extends ChangeNotifier {
     notifyListeners();
 
 
-    var url = Uri.parse('http://192.168.2.5:5000/updateInterests');
+    var url = Uri.parse('http://192.168.150.2:5000/updateInterests');
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json; charset=UTF-8'},
@@ -115,7 +115,7 @@ class ProfileData extends ChangeNotifier {
 
 
   Future<void> fetchUserData(int userId) async {
-    var url = Uri.parse('http://192.168.2.5:5000/getdata?userId=$userId');
+    var url = Uri.parse('http://192.168.150.2:5000/getdata?userId=$userId');
     var response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -138,15 +138,16 @@ class ProfileData extends ChangeNotifier {
   List<Event2> get userEvents => _userEvents;
 
   Future<void> fetchUserEvents(int userId) async {
-    var url = Uri.parse('http://192.168.2.5:5000/getUserEvents?userId=$userId');
+    var url = Uri.parse('http://192.168.150.2:5000/getUserEvents?userId=$userId');
     var response = await http.get(url);
 
      if (response.statusCode == 200) {
     List<dynamic> eventData = json.decode(response.body);
     // Ensure that each item in eventData is actually a Map<String, dynamic>
-    if (eventData.every((element) => element is Map<String, dynamic>)) {
+    if (eventData.every((element) => element is List<dynamic>)) {
       _userEvents = eventData.map((data) => Event2.fromJson(data)).toList();
-    } else {
+    } 
+    else {
       print('Data format is not as expected');
     }
       notifyListeners();
@@ -154,6 +155,33 @@ class ProfileData extends ChangeNotifier {
       print('Failed to fetch user events');
     }
   }
+
+
+  Map<String, List<Event2>> categoryEvents = {};
+
+ Future<void> fetchCategoryEvents(String category) async {
+  var url = Uri.parse('http://192.168.150.2:5000/getCategoryEvents?category=$category');
+  var response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    // Decode the response body into a List of dynamic objects
+    List<dynamic> eventData = json.decode(response.body);
+
+    // Convert each dynamic object (which should be a Map<String, dynamic>) 
+    // to an Event2 object and store it in a List
+    categoryEvents[category] = eventData.map<Event2>((data) {
+      return Event2.fromJson(data);
+    }).where((event) {
+        // Parse event date and compare with today's date
+        DateTime eventDate = DateTime.parse(event.date!);
+        return eventDate.isAfter(DateTime.now()) || eventDate.isAtSameMomentAs(DateTime.now());
+      }).toList();
+
+    notifyListeners();
+  } else {
+    print('Failed to fetch user events');
+  }
+}
 }
 class Event2 {
 final String ? title;
@@ -164,12 +192,12 @@ final String ? location;
 
 Event2({this.title, this.date, this.time, this.location});
 
-factory Event2.fromJson(Map<String, dynamic> json) {
+factory Event2.fromJson(List<dynamic> json) {
 return Event2(
-title: json['title'],
-date: json['date'],
-time: json['time'],
-location: json['location'],
+title: json[0],
+date: json[1],
+time: json[2],
+location: json[3],
 // Initialize other fields as necessary
 );
 }
@@ -301,10 +329,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: const Text("Back"),
                   onPressed:() {
                     Navigator.pop(context); 
-                    //MaterialPageRoute(
-                    //  builder: (context) => ProfilePage(),
-                    //),
-                    //);
                   },
                 ),  
               ],
@@ -354,7 +378,7 @@ class _ProfilePageState extends State<ProfilePage> {
            const SizedBox(height: 5),
            // Interests Section
            const Text(
-            '   Your Interests',
+            '  Your Interests',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
            //Interests
@@ -386,103 +410,22 @@ class _ProfilePageState extends State<ProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.start, 
             children: [
              Text(
-                'Events Cd By You',
+                'Events Created By You',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            
-      //       Expanded(
-      //   child: ListView.builder(
-      //     itemCount: profileData.userEvents.length,
-      //     itemBuilder: (context, index) {
-      //       var event = profileData.userEvents[index];
-      //       return buildEventContainer(event);
-      //     },
-      //   ),
-      // ),
+              ),    
+                SingleChildScrollView(
+                 scrollDirection: Axis.horizontal,
+                 child: Row(
+                   children:[
+                   for(Event2 event in profileData.userEvents)   
+                     EventBox(event)// A widget that displays the event details
+                   ]
+          )
+                )
             ],
           ),
         ),
-           Padding(
-           padding: const EdgeInsets.all(16.0),
-    child: Stack(
-    children: [
-      Container(
-        height: 200, // Adjust the height as needed
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20.0), // Circular border
-          color: Colors.grey[300], // Background color
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20.0),
-                topRight: Radius.circular(20.0),
-              ),
-              child: Container(
-                height: 0.5 * 200,// Adjust the height of the circular image
-                width: double.infinity, // Adjust the width of the circular image
-                //decoration: const  BoxDecoration(
-                //  color: Colors.white, // You can set a background color if needed
-              //  ),
-               // child: Image.network(
-                  //'https://placekitten.com/300/300', // Replace with your image URL
-                 // fit: BoxFit.cover,
-               // ),
-              ),
-            ),
-            const Text(
-              'Category',
-              style: TextStyle(color: Colors.blue),
-            ),
-          ],
-        ),
-      ),
-      Positioned(
-        bottom: 10.0,
-        left: 16.0,
-        child: 
-        Padding(
-  padding: const EdgeInsets.all(16.0),
-  child: Column(
-    children: [
-      const Text(
-        'Events  By You',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-      
-    ],
-  ),
-)
-        // Container(
-        //   padding: const EdgeInsets.all(16.0),
-        //   child: const Column(
-        //     crossAxisAlignment: CrossAxisAlignment.start,
-        //     children: [
-        //       Text(
-        //         'title',
-        //         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        //       ),
-        //       Text(
-        //         'Date',
-        //         style: TextStyle(fontSize: 16),
-        //       ),
-        //       Text(
-        //         'Time',
-        //         style: TextStyle(fontSize: 16),
-        //       ),
-        //       Text(
-        //         'Location',
-        //         style: TextStyle(fontSize: 16),
-        //       ),
-        //     ],
-        //   ),
-        // ),
-      ),
-    ],
-  ),
-)
+     
         ]
         )
         )
@@ -496,7 +439,8 @@ class _ProfilePageState extends State<ProfilePage> {
               color: const Color.fromARGB(255, 253, 110, 0),
               icon: const Icon(Icons.search),
               onPressed: () {
-                Navigator.pushNamed(context, '/explore');
+                Navigator.push(context,
+        MaterialPageRoute(builder: (context) => Explore(id: widget.id)));
               },
             ),
             IconButton(
@@ -605,17 +549,4 @@ class _YourCalendarWidgetState extends State<YourCalendarWidget>
   );
   }
 }
-Widget buildEventContainer(Event2 event) {
-  return Container(
-    // Define your container appearance
-    child: Column(
-      children: [
-        Text(event.title!),
-        Text(event.date!),
-        Text(event.time!),
-        Text(event.location!),
-        // Add other event details
-      ],
-    ),
-  );
-}
+
